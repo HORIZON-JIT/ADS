@@ -68,6 +68,57 @@
             background-color: #f1f3f4;
         }
 
+        /* Menu section */
+        .menu-section {
+            display: none;
+            margin-bottom: 24px;
+        }
+
+        .menu-section.active {
+            display: block;
+        }
+
+        .menu-description {
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 16px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .folder-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background-color: #fff;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            text-align: left;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .folder-btn:hover {
+            border-color: #1a73e8;
+            box-shadow: 0 1px 6px rgba(26, 115, 232, 0.2);
+        }
+
+        .folder-btn .folder-icon {
+            font-size: 24px;
+        }
+
+        .btn-back {
+            margin-bottom: 16px;
+        }
+
+        /* Search section */
         .search-section {
             display: none;
             margin-bottom: 24px;
@@ -193,7 +244,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>CRP_作業手順書検索</h1>
+        <h1 id="page-title">CRP_作業手順書検索</h1>
 
         <div class="auth-section">
             <button id="btn-signin" class="btn btn-primary" onclick="handleSignIn()">Google でサインイン</button>
@@ -201,9 +252,15 @@
             <span id="user-info" class="user-info"></span>
         </div>
 
+        <div id="menu-section" class="menu-section">
+            <p class="menu-description">検索するフォルダを選択してください</p>
+            <div id="menu-buttons" class="menu-buttons"></div>
+        </div>
+
         <div id="search-section" class="search-section">
+            <button class="btn btn-secondary btn-back" onclick="backToMenu()">← フォルダ選択に戻る</button>
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="Excelファイル名で検索..." onkeydown="if(event.key==='Enter') handleSearch()">
+                <input type="text" id="search-input" placeholder="ファイル名で検索..." onkeydown="if(event.key==='Enter') handleSearch()">
                 <button class="btn btn-primary" onclick="handleSearch()">検索</button>
             </div>
         </div>
@@ -219,8 +276,11 @@
         // ============================================================
         // ここにご自身の OAuth 2.0 クライアントIDを設定してください
         const CLIENT_ID = '158402335540-hk7sn0l40k0hquhcfvm27ceroj2ubpl7.apps.googleusercontent.com';
-        // ここに検索対象のフォルダIDを設定してください
-        const FOLDER_ID = '12_BMOQb5aA_pTOm132OAAoqm8woyFEfM';
+        // 検索対象フォルダの設定（追加する場合は配列に1行追加するだけ）
+        const FOLDERS = [
+            { id: '12_BMOQb5aA_pTOm132OAAoqm8woyFEfM', label: 'CRP_梱包作業手順書' },
+            { id: '1-h8rQJXB7Zz0xJgvmOivk1iBRfQQ9Iu-', label: 'アフターペラ(UM番)' },
+        ];
         // ============================================================
 
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
@@ -228,6 +288,7 @@
 
         let tokenClient;
         let accessToken = null;
+        let currentFolder = null;
 
         window.addEventListener('load', () => {
             tokenClient = google.accounts.oauth2.initTokenClient({
@@ -235,17 +296,21 @@
                 scope: SCOPES,
                 callback: onTokenResponse,
             });
+            renderMenu();
+            // 自動サインイン: Googleログイン済みならポップアップなしでトークン取得
+            tokenClient.requestAccessToken({ prompt: '' });
         });
 
         function onTokenResponse(response) {
             if (response.error) {
-                showStatus('認証に失敗しました: ' + response.error, 'error');
+                // 自動サインイン失敗時はサインインボタンを表示（手動サインインにフォールバック）
+                document.getElementById('btn-signin').style.display = 'inline-block';
                 return;
             }
             accessToken = response.access_token;
             document.getElementById('btn-signin').style.display = 'none';
             document.getElementById('btn-signout').style.display = 'inline-block';
-            document.getElementById('search-section').classList.add('active');
+            document.getElementById('menu-section').classList.add('active');
             showStatus('サインインしました', 'success');
             fetchUserInfo();
         }
@@ -263,13 +328,50 @@
                 google.accounts.oauth2.revoke(accessToken);
             }
             accessToken = null;
+            currentFolder = null;
             document.getElementById('btn-signin').style.display = 'inline-block';
             document.getElementById('btn-signout').style.display = 'none';
+            document.getElementById('menu-section').classList.remove('active');
             document.getElementById('search-section').classList.remove('active');
             document.getElementById('user-info').textContent = '';
             document.getElementById('results').innerHTML = '';
+            document.getElementById('page-title').textContent = 'CRP_作業手順書検索';
             showStatus('サインアウトしました', 'info');
         }
+
+        // --- メニュー関連 ---
+
+        function renderMenu() {
+            const container = document.getElementById('menu-buttons');
+            container.innerHTML = FOLDERS.map((folder, i) =>
+                `<button class="folder-btn" onclick="selectFolder(${i})">
+                    <span class="folder-icon">📁</span>
+                    <span>${escapeHtml(folder.label)}</span>
+                </button>`
+            ).join('');
+        }
+
+        function selectFolder(index) {
+            currentFolder = FOLDERS[index];
+            document.getElementById('menu-section').classList.remove('active');
+            document.getElementById('search-section').classList.add('active');
+            document.getElementById('page-title').textContent = currentFolder.label + ' 検索';
+            document.getElementById('search-input').value = '';
+            document.getElementById('results').innerHTML = '';
+            hideStatus();
+        }
+
+        function backToMenu() {
+            currentFolder = null;
+            document.getElementById('search-section').classList.remove('active');
+            document.getElementById('menu-section').classList.add('active');
+            document.getElementById('page-title').textContent = 'CRP_作業手順書検索';
+            document.getElementById('search-input').value = '';
+            document.getElementById('results').innerHTML = '';
+            hideStatus();
+        }
+
+        // --- 検索関連 ---
 
         async function fetchUserInfo() {
             try {
@@ -299,7 +401,7 @@
             hideStatus();
 
             try {
-                const files = await searchExcelFiles(keyword);
+                const files = await searchFiles(keyword);
                 renderResults(files, keyword);
             } catch (err) {
                 showStatus('検索中にエラーが発生しました: ' + err.message, 'error');
@@ -308,9 +410,9 @@
             }
         }
 
-        async function searchExcelFiles(keyword) {
+        async function searchFiles(keyword) {
             const escapedKeyword = keyword.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            const query = `name contains '${escapedKeyword}' and '${FOLDER_ID}' in parents and (mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType='application/vnd.ms-excel') and trashed=false`;
+            const query = `name contains '${escapedKeyword}' and '${currentFolder.id}' in parents and trashed=false`;
 
             const params = new URLSearchParams({
                 q: query,
@@ -342,11 +444,11 @@
             const container = document.getElementById('results');
 
             if (files.length === 0) {
-                container.innerHTML = `<div class="result-count">「${escapeHtml(keyword)}」に一致するExcelファイルは見つかりませんでした。</div>`;
+                container.innerHTML = `<div class="result-count">「${escapeHtml(keyword)}」に一致するファイルは見つかりませんでした。</div>`;
                 return;
             }
 
-            let html = `<div class="result-count">${files.length} 件のExcelファイルが見つかりました</div>`;
+            let html = `<div class="result-count">${files.length} 件のファイルが見つかりました</div>`;
             html += `<table class="results-table">
                 <thead>
                     <tr>
