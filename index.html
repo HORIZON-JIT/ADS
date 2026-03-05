@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRP_作業手順書検索</title>
+    <title>アフター 検索システム</title>
     <style>
         * {
             margin: 0;
@@ -12,199 +12,359 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f5f5f5;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e8eef5 100%);
             color: #333;
             line-height: 1.6;
+            min-height: 100vh;
         }
 
-        .container {
-            max-width: 960px;
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a237e 0%, #1565c0 50%, #0288d1 100%);
+            color: #fff;
+            padding: 0 24px;
+            box-shadow: 0 4px 20px rgba(21, 101, 192, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 24px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
         }
 
-        h1 {
-            font-size: 24px;
-            margin-bottom: 24px;
-            color: #1a73e8;
-        }
-
-        .auth-section {
-            margin-bottom: 24px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .btn-primary {
-            background-color: #1a73e8;
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
             color: #fff;
         }
 
-        .btn-primary:hover {
-            background-color: #1557b0;
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
-        .btn-primary:disabled {
-            background-color: #93b4e8;
-            cursor: not-allowed;
+        .user-info {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.85);
         }
 
-        .btn-secondary {
-            background-color: #fff;
-            color: #333;
-            border: 1px solid #dadce0;
+        .btn-signout {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .btn-secondary:hover {
-            background-color: #f1f3f4;
+        .btn-signout:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Main content */
+        .main {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        /* Sign-in card */
+        .signin-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 48px 40px;
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            animation: fadeUp 0.4s ease;
+        }
+
+        .signin-card h2 {
+            font-size: 22px;
+            color: #1a237e;
+            margin-bottom: 8px;
+        }
+
+        .signin-card p {
+            color: #666;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .btn-signin {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #1565c0, #0288d1);
+            color: #fff;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(21, 101, 192, 0.3);
+        }
+
+        .btn-signin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(21, 101, 192, 0.4);
+        }
+
+        .btn-signin:active {
+            transform: translateY(0);
         }
 
         /* Menu section */
         .menu-section {
             display: none;
-            margin-bottom: 24px;
+            animation: fadeUp 0.4s ease;
         }
 
         .menu-section.active {
             display: block;
         }
 
-        .menu-description {
-            font-size: 14px;
-            color: #5f6368;
-            margin-bottom: 16px;
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1565c0;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
         }
 
-        .menu-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a237e;
+            margin-bottom: 24px;
         }
 
-        .folder-btn {
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .folder-card {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 16px 20px;
-            background-color: #fff;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            font-size: 16px;
+            gap: 16px;
+            padding: 20px 24px;
+            background: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 500;
             color: #333;
             cursor: pointer;
             text-align: left;
-            transition: box-shadow 0.2s, border-color 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
         }
 
-        .folder-btn:hover {
-            border-color: #1a73e8;
-            box-shadow: 0 1px 6px rgba(26, 115, 232, 0.2);
+        .folder-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(21, 101, 192, 0.15);
         }
 
-        .folder-btn .folder-icon {
-            font-size: 24px;
+        .folder-card:active {
+            transform: translateY(-1px);
         }
 
-        .btn-back {
-            margin-bottom: 16px;
+        .folder-card .folder-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .folder-card .folder-label {
+            line-height: 1.4;
         }
 
         /* Search section */
         .search-section {
             display: none;
-            margin-bottom: 24px;
+            animation: fadeUp 0.4s ease;
         }
 
         .search-section.active {
             display: block;
         }
 
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: #1565c0;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px 0;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: #0d47a1;
+        }
+
+        .search-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+
         .search-box {
             display: flex;
-            gap: 8px;
+            gap: 12px;
         }
 
         .search-box input {
             flex: 1;
-            padding: 10px 14px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 14px 20px;
+            border: 2px solid #e0e7ef;
+            border-radius: 12px;
+            font-size: 15px;
             outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #f8fafc;
         }
 
         .search-box input:focus {
-            border-color: #1a73e8;
-            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            border-color: #1565c0;
+            box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
+            background: #fff;
         }
 
+        .btn-search {
+            background: linear-gradient(135deg, #1565c0, #0288d1);
+            color: #fff;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(21, 101, 192, 0.25);
+            white-space: nowrap;
+        }
+
+        .btn-search:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(21, 101, 192, 0.35);
+        }
+
+        /* Status */
         .status {
-            margin-bottom: 16px;
+            margin-top: 16px;
             padding: 12px 16px;
-            border-radius: 4px;
+            border-radius: 10px;
             font-size: 14px;
             display: none;
         }
 
         .status.info {
             display: block;
-            background-color: #e8f0fe;
-            color: #1a73e8;
+            background-color: #e3f2fd;
+            color: #1565c0;
         }
 
         .status.error {
             display: block;
-            background-color: #fce8e6;
-            color: #d93025;
+            background-color: #ffebee;
+            color: #c62828;
         }
 
         .status.success {
             display: block;
-            background-color: #e6f4ea;
-            color: #137333;
+            background-color: #e8f5e9;
+            color: #2e7d32;
         }
 
+        /* Loading */
         .loading {
             display: none;
             text-align: center;
-            padding: 24px;
-            color: #666;
+            padding: 32px;
+            color: #888;
         }
 
         .loading.active {
             display: block;
         }
 
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e0e7ef;
+            border-top-color: #1565c0;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        /* Results */
+        .results-wrapper {
+            margin-top: 24px;
+        }
+
+        .result-count {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
         .results-table {
             width: 100%;
             border-collapse: collapse;
             background-color: #fff;
-            border-radius: 8px;
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
         }
 
         .results-table th {
-            background-color: #f8f9fa;
-            padding: 12px 16px;
+            background-color: #f0f4f8;
+            padding: 14px 20px;
             text-align: left;
-            font-size: 13px;
-            color: #5f6368;
-            border-bottom: 1px solid #dadce0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e0e7ef;
         }
 
         .results-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #eeeeee;
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f4f8;
             font-size: 14px;
         }
 
@@ -212,63 +372,87 @@
             border-bottom: none;
         }
 
-        .results-table tr:hover td {
-            background-color: #f8f9fa;
+        .results-table tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+
+        .results-table tbody tr:hover td {
+            background-color: #e3f2fd;
         }
 
         .results-table a {
-            color: #1a73e8;
+            color: #1565c0;
             text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
         }
 
         .results-table a:hover {
+            color: #0d47a1;
             text-decoration: underline;
         }
 
-        .result-count {
-            margin-bottom: 12px;
-            font-size: 14px;
-            color: #5f6368;
+        /* Animations */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .user-info {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: 12px;
-            font-size: 14px;
-            color: #5f6368;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 id="page-title">CRP_作業手順書検索</h1>
+    <header class="header">
+        <div class="header-inner">
+            <h1 id="page-title">アフター 検索システム</h1>
+            <div class="header-right">
+                <span id="user-info" class="user-info"></span>
+                <button id="btn-signout" class="btn-signout" onclick="handleSignOut()" style="display:none;">サインアウト</button>
+            </div>
+        </div>
+    </header>
 
-        <div class="auth-section">
-            <button id="btn-signin" class="btn btn-primary" onclick="handleSignIn()">Google でサインイン</button>
-            <button id="btn-signout" class="btn btn-secondary" onclick="handleSignOut()" style="display:none;">サインアウト</button>
-            <span id="user-info" class="user-info"></span>
+    <div class="main">
+        <!-- Sign-in -->
+        <div id="signin-section" class="signin-card">
+            <h2>アフター 検索システム</h2>
+            <p>Google ドライブ内のファイルを検索します</p>
+            <button id="btn-signin" class="btn-signin" onclick="handleSignIn()">
+                <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.9 33 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.2-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.5 18.8 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.2 26.7 36 24 36c-5.4 0-9.9-3.5-11.5-8.3l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.2-2.7-.4-3.9z"/></svg>
+                Google でサインイン
+            </button>
         </div>
 
+        <!-- Menu -->
         <div id="menu-section" class="menu-section">
-            <p class="menu-description">検索するフォルダを選択してください</p>
-            <div id="menu-buttons" class="menu-buttons"></div>
+            <p class="section-label">フォルダ選択</p>
+            <p class="section-title">検索するフォルダを選択してください</p>
+            <div id="menu-buttons" class="menu-grid"></div>
         </div>
 
+        <!-- Search -->
         <div id="search-section" class="search-section">
-            <button class="btn btn-secondary btn-back" onclick="backToMenu()">← フォルダ選択に戻る</button>
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="ファイル名で検索..." onkeydown="if(event.key==='Enter') handleSearch()">
-                <button class="btn btn-primary" onclick="handleSearch()">検索</button>
+            <button class="btn-back" onclick="backToMenu()">← フォルダ選択に戻る</button>
+            <div class="search-card">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="ファイル名で検索..." onkeydown="if(event.key==='Enter') handleSearch()">
+                    <button class="btn-search" onclick="handleSearch()">検索</button>
+                </div>
             </div>
         </div>
 
         <div id="status" class="status"></div>
-        <div id="loading" class="loading">検索中...</div>
-        <div id="results"></div>
-
+        <div id="loading" class="loading">検索中</div>
+        <div id="results" class="results-wrapper"></div>
     </div>
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -281,6 +465,7 @@
             { id: '12_BMOQb5aA_pTOm132OAAoqm8woyFEfM', label: 'CRP_梱包作業手順書' },
             { id: '1-h8rQJXB7Zz0xJgvmOivk1iBRfQQ9Iu-', label: 'アフターペラ(UM番)' },
         ];
+        const DEFAULT_TITLE = 'アフター 検索システム';
         // ============================================================
 
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
@@ -303,15 +488,13 @@
 
         function onTokenResponse(response) {
             if (response.error) {
-                // 自動サインイン失敗時はサインインボタンを表示（手動サインインにフォールバック）
-                document.getElementById('btn-signin').style.display = 'inline-block';
+                document.getElementById('signin-section').style.display = '';
                 return;
             }
             accessToken = response.access_token;
-            document.getElementById('btn-signin').style.display = 'none';
+            document.getElementById('signin-section').style.display = 'none';
             document.getElementById('btn-signout').style.display = 'inline-block';
             document.getElementById('menu-section').classList.add('active');
-            showStatus('サインインしました', 'success');
             fetchUserInfo();
         }
 
@@ -329,14 +512,14 @@
             }
             accessToken = null;
             currentFolder = null;
-            document.getElementById('btn-signin').style.display = 'inline-block';
+            document.getElementById('signin-section').style.display = '';
             document.getElementById('btn-signout').style.display = 'none';
             document.getElementById('menu-section').classList.remove('active');
             document.getElementById('search-section').classList.remove('active');
             document.getElementById('user-info').textContent = '';
             document.getElementById('results').innerHTML = '';
-            document.getElementById('page-title').textContent = 'CRP_作業手順書検索';
-            showStatus('サインアウトしました', 'info');
+            document.getElementById('page-title').textContent = DEFAULT_TITLE;
+            hideStatus();
         }
 
         // --- メニュー関連 ---
@@ -344,9 +527,9 @@
         function renderMenu() {
             const container = document.getElementById('menu-buttons');
             container.innerHTML = FOLDERS.map((folder, i) =>
-                `<button class="folder-btn" onclick="selectFolder(${i})">
+                `<button class="folder-card" onclick="selectFolder(${i})">
                     <span class="folder-icon">📁</span>
-                    <span>${escapeHtml(folder.label)}</span>
+                    <span class="folder-label">${escapeHtml(folder.label)}</span>
                 </button>`
             ).join('');
         }
@@ -355,7 +538,7 @@
             currentFolder = FOLDERS[index];
             document.getElementById('menu-section').classList.remove('active');
             document.getElementById('search-section').classList.add('active');
-            document.getElementById('page-title').textContent = currentFolder.label + ' 検索';
+            document.getElementById('page-title').textContent = currentFolder.label;
             document.getElementById('search-input').value = '';
             document.getElementById('results').innerHTML = '';
             hideStatus();
@@ -365,7 +548,7 @@
             currentFolder = null;
             document.getElementById('search-section').classList.remove('active');
             document.getElementById('menu-section').classList.add('active');
-            document.getElementById('page-title').textContent = 'CRP_作業手順書検索';
+            document.getElementById('page-title').textContent = DEFAULT_TITLE;
             document.getElementById('search-input').value = '';
             document.getElementById('results').innerHTML = '';
             hideStatus();
