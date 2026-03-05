@@ -77,30 +77,6 @@
             display: block;
         }
 
-        .drive-selector {
-            margin-bottom: 12px;
-        }
-
-        .drive-selector label {
-            font-size: 13px;
-            color: #5f6368;
-            margin-right: 8px;
-        }
-
-        .drive-selector select {
-            padding: 8px 12px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            font-size: 14px;
-            outline: none;
-            min-width: 300px;
-        }
-
-        .drive-selector select:focus {
-            border-color: #1a73e8;
-            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-        }
-
         .search-box {
             display: flex;
             gap: 8px;
@@ -242,12 +218,6 @@
         </div>
 
         <div id="search-section" class="search-section">
-            <div class="drive-selector">
-                <label for="drive-select">共有ドライブ:</label>
-                <select id="drive-select">
-                    <option value="">読み込み中...</option>
-                </select>
-            </div>
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="Excelファイル名で検索..." onkeydown="if(event.key==='Enter') handleSearch()">
                 <button class="btn btn-primary" onclick="handleSearch()">検索</button>
@@ -264,7 +234,9 @@
             2. 「APIとサービス」→「ライブラリ」から <strong>Google Drive API</strong> を有効化<br>
             3. 「APIとサービス」→「認証情報」→「認証情報を作成」→「OAuth クライアントID」を作成（種類: ウェブアプリケーション）<br>
             4. 「承認済みの JavaScript 生成元」に <code>http://localhost</code> やファイルを配信するオリジンを追加<br>
-            5. このファイルの <code>CLIENT_ID</code> を取得したクライアントIDに置き換える
+            5. このファイルの <code>CLIENT_ID</code> を取得したクライアントIDに置き換える<br>
+            6. このファイルの <code>SHARED_DRIVE_ID</code> を検索対象の共有ドライブIDに置き換える<br>
+            　※ 共有ドライブのURLが <code>https://drive.google.com/drive/folders/XXXXX</code> の場合、XXXXX部分がIDです
         </div>
     </div>
 
@@ -273,6 +245,8 @@
         // ============================================================
         // ここにご自身の OAuth 2.0 クライアントIDを設定してください
         const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
+        // ここに検索対象の共有ドライブIDを設定してください
+        const SHARED_DRIVE_ID = 'YOUR_SHARED_DRIVE_ID';
         // ============================================================
 
         const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
@@ -301,7 +275,6 @@
             document.getElementById('setup-note').style.display = 'none';
             showStatus('サインインしました', 'success');
             fetchUserInfo();
-            fetchSharedDrives();
         }
 
         function handleSignIn() {
@@ -324,31 +297,6 @@
             document.getElementById('results').innerHTML = '';
             document.getElementById('setup-note').style.display = 'block';
             showStatus('サインアウトしました', 'info');
-        }
-
-        async function fetchSharedDrives() {
-            const select = document.getElementById('drive-select');
-            select.innerHTML = '<option value="">読み込み中...</option>';
-            try {
-                const res = await fetch('https://www.googleapis.com/drive/v3/drives?pageSize=100', {
-                    headers: { 'Authorization': 'Bearer ' + accessToken }
-                });
-                const data = await res.json();
-                const drives = data.drives || [];
-
-                select.innerHTML = '';
-                for (const drive of drives) {
-                    const option = document.createElement('option');
-                    option.value = drive.id;
-                    option.textContent = drive.name;
-                    select.appendChild(option);
-                }
-                if (drives.length === 0) {
-                    select.innerHTML = '<option value="">共有ドライブが見つかりません</option>';
-                }
-            } catch (err) {
-                select.innerHTML = '<option value="">共有ドライブの取得に失敗しました</option>';
-            }
         }
 
         async function fetchUserInfo() {
@@ -389,11 +337,6 @@
         }
 
         async function searchExcelFiles(keyword) {
-            const driveId = document.getElementById('drive-select').value;
-            if (!driveId) {
-                throw new Error('共有ドライブを選択してください');
-            }
-
             const escapedKeyword = keyword.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             const query = `name contains '${escapedKeyword}' and (mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType='application/vnd.ms-excel') and trashed=false`;
 
@@ -402,7 +345,7 @@
                 fields: 'files(id,name,modifiedTime,size,webViewLink)',
                 orderBy: 'modifiedTime desc',
                 pageSize: '100',
-                driveId: driveId,
+                driveId: SHARED_DRIVE_ID,
                 corpora: 'drive',
                 includeItemsFromAllDrives: 'true',
                 supportsAllDrives: 'true',
