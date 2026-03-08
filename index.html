@@ -57,7 +57,7 @@
             color: rgba(255, 255, 255, 0.85);
         }
 
-        .btn-signout {
+        .btn-signout, .btn-history {
             background: rgba(255, 255, 255, 0.15);
             color: #fff;
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -68,7 +68,7 @@
             transition: all 0.2s;
         }
 
-        .btn-signout:hover {
+        .btn-signout:hover, .btn-history:hover {
             background: rgba(255, 255, 255, 0.25);
         }
 
@@ -416,6 +416,7 @@
             <h1 id="page-title">アフター 検索システム</h1>
             <div class="header-right">
                 <span id="user-info" class="user-info"></span>
+                <button id="btn-history" class="btn-history" onclick="openLogSheet()" style="display:none;">閲覧履歴</button>
                 <button id="btn-signout" class="btn-signout" onclick="handleSignOut()" style="display:none;">サインアウト</button>
             </div>
         </div>
@@ -469,13 +470,16 @@
         const DEFAULT_TITLE = 'アフター 検索システム';
         // ============================================================
 
-        const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets';
         const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
+        const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
 
         let tokenClient;
         let accessToken = null;
         let currentFolder = null;
         let allFiles = [];
+        let logSpreadsheetId = localStorage.getItem('logSpreadsheetId') || '';
+        let currentUserEmail = '';
 
         window.addEventListener('load', () => {
             tokenClient = google.accounts.oauth2.initTokenClient({
@@ -496,6 +500,7 @@
             accessToken = response.access_token;
             document.getElementById('signin-section').style.display = 'none';
             document.getElementById('btn-signout').style.display = 'inline-block';
+            document.getElementById('btn-history').style.display = 'inline-block';
             document.getElementById('menu-section').classList.add('active');
             fetchUserInfo();
         }
@@ -516,6 +521,7 @@
             currentFolder = null;
             document.getElementById('signin-section').style.display = '';
             document.getElementById('btn-signout').style.display = 'none';
+            document.getElementById('btn-history').style.display = 'none';
             document.getElementById('menu-section').classList.remove('active');
             document.getElementById('search-section').classList.remove('active');
             document.getElementById('user-info').textContent = '';
@@ -607,9 +613,84 @@
                     headers: { 'Authorization': 'Bearer ' + accessToken }
                 });
                 const data = await res.json();
-                document.getElementById('user-info').textContent = data.email || '';
+                currentUserEmail = data.email || '';
+                document.getElementById('user-info').textContent = currentUserEmail;
             } catch {
                 // ユーザー情報の取得失敗は無視
+            }
+        }
+
+        // --- 閲覧履歴ログ関連 ---
+
+        async function getOrCreateLogSheet() {
+            if (logSpreadsheetId) return logSpreadsheetId;
+
+            // 新規スプレッドシートを作成
+            const res = await fetch(SHEETS_API, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    properties: { title: 'アフター検索システム_閲覧履歴ログ' },
+                    sheets: [{
+                        properties: { title: '履歴' },
+                        data: [{
+                            startRow: 0,
+                            startColumn: 0,
+                            rowData: [{
+                                values: [
+                                    { userEnteredValue: { stringValue: '日時' } },
+                                    { userEnteredValue: { stringValue: 'ユーザー' } },
+                                    { userEnteredValue: { stringValue: 'フォルダ' } },
+                                    { userEnteredValue: { stringValue: 'ファイル名' } },
+                                    { userEnteredValue: { stringValue: 'リンク' } },
+                                ]
+                            }]
+                        }]
+                    }]
+                }),
+            });
+
+            if (!res.ok) throw new Error('ログシートの作成に失敗しました');
+            const data = await res.json();
+            logSpreadsheetId = data.spreadsheetId;
+            localStorage.setItem('logSpreadsheetId', logSpreadsheetId);
+            return logSpreadsheetId;
+        }
+
+        async function logFileOpen(fileName, fileLink) {
+            try {
+                const sheetId = await getOrCreateLogSheet();
+                const now = new Date().toLocaleString('ja-JP');
+                const folderName = currentFolder ? currentFolder.label : '';
+
+                await fetch(`${SHEETS_API}/${sheetId}/values/履歴!A:E:append?valueInputOption=USER_ENTERED`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        values: [[now, currentUserEmail, folderName, fileName, fileLink]]
+                    }),
+                });
+            } catch {
+                // ログ記録失敗は無視（本来の操作を妨げない）
+            }
+        }
+
+        function handleFileClick(fileName, fileLink) {
+            logFileOpen(fileName, fileLink);
+            window.open(fileLink, '_blank', 'noopener');
+        }
+
+        function openLogSheet() {
+            if (logSpreadsheetId) {
+                window.open(`https://docs.google.com/spreadsheets/d/${logSpreadsheetId}`, '_blank', 'noopener');
+            } else {
+                showStatus('まだ閲覧履歴がありません。ファイルを開くと自動的にログシートが作成されます。', 'info');
             }
         }
 
@@ -661,7 +742,7 @@
                 const link = file.webViewLink || '#';
 
                 html += `<tr>
-                    <td><a href="${escapeHtml(link)}" target="_blank" rel="noopener">${escapeHtml(file.name)}</a></td>
+                    <td><a href="#" onclick="event.preventDefault(); handleFileClick('${escapeHtml(file.name).replace(/'/g, "\\'")}', '${escapeHtml(link).replace(/'/g, "\\'")}')">${escapeHtml(file.name)}</a></td>
                     <td>${modifiedDate}</td>
                     <td>${fileSize}</td>
                 </tr>`;
