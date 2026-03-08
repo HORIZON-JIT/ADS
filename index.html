@@ -465,7 +465,7 @@
         const FOLDERS = [
             { id: '12_BMOQb5aA_pTOm132OAAoqm8woyFEfM', label: 'CRP_梱包作業手順書' },
             { id: '1-h8rQJXB7Zz0xJgvmOivk1iBRfQQ9Iu-', label: 'アフターペラ(UM番)' },
-            { id: '1-TyStxBP9n7Po48oTJLJp0tpqTSGJd3f', label: 'アフター作業手順書' },
+            { id: '1-TyStxBP9n7Po48oTJLJp0tpqTSGJd3f', label: 'アフター作業手順書', excludeExt: ['.json'] },
         ];
         const DEFAULT_TITLE = 'アフター 検索システム';
         // ============================================================
@@ -577,7 +577,12 @@
             if (accessToken) {
                 document.getElementById('loading').classList.add('active');
                 try {
-                    allFiles = await fetchAllFiles(currentFolder.id);
+                    let files = await fetchAllFiles(currentFolder.id);
+                    if (currentFolder.excludeExt) {
+                        const exts = currentFolder.excludeExt.map(e => e.toLowerCase());
+                        files = files.filter(f => !exts.some(ext => f.name.toLowerCase().endsWith(ext)));
+                    }
+                    allFiles = files;
                     renderResults(allFiles, '');
                 } catch (err) {
                     showStatus('ファイル一覧の取得に失敗しました: ' + err.message, 'error');
